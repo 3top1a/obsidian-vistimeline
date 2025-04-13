@@ -1,0 +1,15 @@
+.vis-timeline {
+	border-color: var(--color-base-20);
+}
+
+.vis-text {
+	color: var(--text-normal) !important;
+}
+
+.vis-time-axis .vis-grid.vis-minor {
+	border-color: var(--color-base-40);
+}
+
+.vis-panel.vis-center {
+	border-color: var(--color-base-40);
+}
