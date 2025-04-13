@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "vistimeline",
+	"name": "Visual Timeline",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Visual timeline plugin for Obsidian",
+	"author": "3top1a",
+	"authorUrl": "https://rusz.space",
+	"fundingUrl": "https://rusz.space",
 	"isDesktopOnly": false
 }
