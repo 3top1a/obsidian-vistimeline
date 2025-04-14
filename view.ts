@@ -3,6 +3,7 @@ import {Timeline} from 'vis-timeline/esnext'
 import {DataSet} from "vis-data";
 import 'vis-timeline/styles/vis-timeline-graph2d.css';
 import './graph.css';
+import {DataStore} from "./data";
 
 export const VIEW_TYPE_VIS = 'vistimeline';
 
@@ -31,15 +32,7 @@ export class TimelineView extends ItemView {
 		container.empty();
 		const timeline_div = container.createDiv('timeline');
 
-		// Create a DataSet (allows two-way data-binding)
-		const items = new DataSet([
-			{id: 1, content: 'item 1', start: '2014-04-20'},
-			{id: 2, content: 'item 2', start: '2014-04-14'},
-			{id: 3, content: 'item 3', start: '2014-04-18'},
-			{id: 4, content: 'item 4', start: '2014-04-16', end: '2014-04-19'},
-			{id: 5, content: 'item 5', start: '2014-04-25'},
-			{id: 6, content: 'item 6', start: '2014-04-27', type: 'point'}
-		]);
+		const items = this.get_dataset();
 
 		// Configuration for the Timeline
 		const options = {
@@ -52,5 +45,31 @@ export class TimelineView extends ItemView {
 
 	async onClose() {
 		// Nothing to clean up.
+	}
+
+	get_dataset(): DataSet<any> {
+		const data = DataStore.getData();
+		const output = new DataSet({});
+
+		let index = 0;
+		data.forEach((item) => {
+			console.debug(item);
+			const data = item.data.value;
+			output.add([{
+				id: index,
+				// @ts-ignore
+				content: data.name,
+				start: data.start?.toISOString(),
+				end: data.end?.toISOString(),
+				type: data.type,
+				group: data.group,
+			}]);
+
+			index += 1;
+		});
+
+		console.info(output);
+
+		return output;
 	}
 }

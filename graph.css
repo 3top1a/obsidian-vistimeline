@@ -13,3 +13,14 @@
 .vis-panel.vis-center {
 	border-color: var(--color-base-40);
 }
+
+.vis-item {
+	background-color: hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+	border-color: var(--color-base-40);
+	border-width: var(--border-width);
+}
+
+.vis-item.vis-selected {
+	background-color: hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) + 20%));
+	border-color: var(--color-base-50);
+}

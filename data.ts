@@ -1,15 +1,20 @@
 import {parseYaml, Plugin, TFile} from 'obsidian';
 import dayjs from "dayjs";
+// @ts-ignore
+import {err, ok, Result} from "true-myth/result"
 
 export interface TimeEventData {
+	name: string,
 	start: dayjs.Dayjs,
-	end: dayjs.Dayjs,
+	end?: dayjs.Dayjs,
+	group?: string,
+	type?: 'box' | 'point' | 'range' | 'background',
 }
 
 export interface Data {
 	filename: TFile,
 	content: string,
-	data: TimeEventData,
+	data: Result<TimeEventData>,
 }
 
 function extractCodeBlocks(markdown: string) {
@@ -21,6 +26,8 @@ function extractCodeBlocks(markdown: string) {
 export class DataStore {
 	private plugin: Plugin;
 	private data: Data[];
+	// Because of the architecture of Obsidian, in order for
+	// the view to get the data it needs to be in a singleton
 	private static instance: DataStore;
 
 	constructor(plugin: Plugin) {
@@ -28,18 +35,19 @@ export class DataStore {
 		DataStore.instance = this;
 	}
 
-	public static getInstance(): DataStore {
-        if (!DataStore.instance) {
-            throw new Error('DataStore not initialized');
-        }
-        return DataStore.instance;
-    }
+	// Get data from the singleton
+	public static getData(): Data[] {
+		return DataStore.instance.data;
+	}
 
 	async onload() {
 		await this.reload_from_cache();
 	}
 
-	parse_date(input: string): dayjs.Dayjs | null {
+	parse_date(input: string | null): dayjs.Dayjs | undefined {
+		if (input == "" || input == null) {
+			return undefined;
+		}
 		if (input == "now") {
 			return dayjs();
 		}
@@ -47,27 +55,42 @@ export class DataStore {
 		if (date.isValid()) {
 			return date;
 		}
-		return null;
+		return undefined;
 	}
 
-	parse_block_to_data(input: string): TimeEventData | null {
+	// Parse MarkDown block to a TimeEventData
+	// Returns a string with an error message in case of error
+	parse_block_to_data(input: string): Result<TimeEventData, {message: string}> {
 		const block = input.replace(/```time/g, "").replace(/```/g, "").trim();
 		const parsed_data = parseYaml(block);
 
-		if (parsed_data && typeof parsed_data === 'object' && 'start' in parsed_data && 'end' in parsed_data) {
+		if (parsed_data) {
 			const start = this.parse_date(parsed_data.start);
 			const end = this.parse_date(parsed_data.end);
-			if (!start || !end) {
-				return null;
+			const name: string | undefined = parsed_data.name;
+			const group: string | undefined = parsed_data.group;
+			const type: string | undefined = parsed_data.type;
+
+			if (start == undefined) {
+				return err({message: "Start is not defined"});
+			}
+			if (end == undefined && (type == 'range' || type == 'background')) {
+				return err({message: "End is not defined"});
+			}
+			if (name == undefined || name == "") {
+				return err({message: "Name is not defined"});
 			}
 
-			return {
+			return ok({
 				start: start,
 				end: end,
-			};
+				name: name,
+				group: group,
+				type: type,
+			});
 		}
 
-		return null;
+		return err({message: "Unable to find any code block"});
 	}
 
 	async reload_from_cache() {
@@ -102,6 +125,5 @@ export class DataStore {
 		}
 
 		this.data = timeBlocks;
-		console.debug(this.data)
 	}
 }

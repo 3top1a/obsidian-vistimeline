@@ -23,6 +23,7 @@
 	},
 	"dependencies": {
 		"dayjs": "^1.11.13",
+		"true-myth": "^8.5.3",
 		"vis-timeline": "^7.7.3"
 	}
 }

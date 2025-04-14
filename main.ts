@@ -21,9 +21,13 @@ export default class TimelinePlugin extends Plugin {
 			this.data.reload_from_cache();
 
 			const parsed_data = this.data.parse_block_to_data(source);
-			if (parsed_data) {
-				const {start, end} = parsed_data;
-				element.createEl('p', {'text': `Start: ${start.format('LLL')}, End: ${end.format('LLL')}`});
+			if (parsed_data.isOk) {
+				const {start, end, name} = parsed_data.value;
+				if (end != undefined) {
+					element.createEl('p', {'text': `${name}: ${start.format('LLL')} -> ${end.format('LLL')}`});
+				} else {
+					element.createEl('p', {'text': `${name}: ${start.format('LLL')}`});
+				}
 			} else {
 				new Notice(`Failed to parse time event data at ${ctx.sourcePath}`);
 				element.createEl('p', {'text': 'Failed to parse time event data.'});
