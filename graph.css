@@ -39,3 +39,8 @@
 .timeline-definition-block {
 	margin-left: 1em;
 }
+
+.block-language-time {
+	margin-top: var(--size-4-1);
+	margin-bottom: var(--size-4-1);
+}
