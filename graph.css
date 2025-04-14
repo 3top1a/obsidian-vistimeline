@@ -24,3 +24,18 @@
 	background-color: hsl(var(--accent-h) var(--accent-s) calc(var(--accent-l) + 20%));
 	border-color: var(--color-base-50);
 }
+
+.cm-parsed-date {
+	color: var(--text-muted);
+	font-size: 0.9em;
+	font-style: italic;
+}
+
+.cm-time-block-error {
+	font-weight: bold;
+	color: var(--text-error)
+}
+
+.timeline-definition-block {
+	margin-left: 1em;
+}

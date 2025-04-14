@@ -11,14 +11,15 @@ export interface TimeEventData {
 	type?: 'box' | 'point' | 'range' | 'background',
 }
 
+// Data entry, with information on the file
 export interface Data {
 	filename: TFile,
-	content: string,
+	line: number,
 	data: Result<TimeEventData>,
 }
 
+// Extract time code blocks from a string of markdown
 function extractCodeBlocks(markdown: string) {
-	// Matches both ``` and ~~~~ style code blocks
 	const regex = /```time[\s\S]*?```/g;
 	return markdown.match(regex) || [];
 }
@@ -41,10 +42,11 @@ export class DataStore {
 	}
 
 	async onload() {
-		await this.reload_from_cache();
+		await this.refresh_data();
 	}
 
-	parse_date(input: string | null): dayjs.Dayjs | undefined {
+	// Parse a string to a date object
+	public static parse_date(input: string | null): dayjs.Dayjs | undefined {
 		if (input == "" || input == null) {
 			return undefined;
 		}
@@ -58,15 +60,20 @@ export class DataStore {
 		return undefined;
 	}
 
-	// Parse MarkDown block to a TimeEventData
+	// Parse Markdown block to a TimeEventData
 	// Returns a string with an error message in case of error
-	parse_block_to_data(input: string): Result<TimeEventData, {message: string}> {
+	public static parse_block_to_data(input: string): Result<TimeEventData, {message: string}> {
 		const block = input.replace(/```time/g, "").replace(/```/g, "").trim();
-		const parsed_data = parseYaml(block);
+		let parsed_data;
+		try {
+			parsed_data = parseYaml(block);
+		} catch (error) {
+			return err({message: "Unable to parse YAML"});
+		}
 
 		if (parsed_data) {
-			const start = this.parse_date(parsed_data.start);
-			const end = this.parse_date(parsed_data.end);
+			const start = DataStore.parse_date(parsed_data.start);
+			const end = DataStore.parse_date(parsed_data.end);
 			const name: string | undefined = parsed_data.name;
 			const group: string | undefined = parsed_data.group;
 			const type: string | undefined = parsed_data.type;
@@ -80,11 +87,14 @@ export class DataStore {
 			if (name == undefined || name == "") {
 				return err({message: "Name is not defined"});
 			}
+			if (type != "range" && type != "background" && type != "box" && type != "point" && type != undefined) {
+				return err({message: "Invalid range type"});
+			}
 
 			return ok({
+				name: name,
 				start: start,
 				end: end,
-				name: name,
 				group: group,
 				type: type,
 			});
@@ -93,10 +103,10 @@ export class DataStore {
 		return err({message: "Unable to find any code block"});
 	}
 
-	async reload_from_cache() {
-		const markdownFiles = this.plugin.app.vault.getMarkdownFiles();
-
+	async refresh_data() {
+		// console.time("Refreshing data");
 		const timeBlocks: Data[] = [];
+		const markdownFiles = this.plugin.app.vault.getMarkdownFiles();
 
 		for (const file of markdownFiles) {
 			const cache = this.plugin.app.metadataCache.getFileCache(file);
@@ -105,7 +115,7 @@ export class DataStore {
 			if (!cache?.sections) continue;
 
 			for (const section of cache.sections) {
-				if (section.type !== 'code') continue;
+				if (section.type != 'code') continue;
 
 				const content = await this.plugin.app.vault.cachedRead(file);
 
@@ -113,17 +123,18 @@ export class DataStore {
 
 				const matches = extractCodeBlocks(blockContent);
 				for (const match of matches) {
-					const parsed_data = this.parse_block_to_data(match);
+					const parsed_data = DataStore.parse_block_to_data(match);
 					if (!parsed_data) continue;
 					timeBlocks.push({
-						content: match,
 						filename: file,
 						data: parsed_data,
+						line: section.position.start.line,
 					})
 				}
 			}
 		}
 
 		this.data = timeBlocks;
+		// console.timeEnd("Refreshing data");
 	}
 }

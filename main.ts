@@ -3,8 +3,11 @@ import {TimelineView, VIEW_TYPE_VIS} from './view'
 import {DataStore} from "./data";
 import localizedFormat from "dayjs/plugin/localizedFormat";
 import dayjs from "dayjs";
+import {dateParserExtension} from "./editor";
 
 dayjs.extend(localizedFormat);
+
+const BLOCK_CSS_CLASS = "timeline-definition-block";
 
 export default class TimelinePlugin extends Plugin {
 	private data: DataStore;
@@ -17,16 +20,23 @@ export default class TimelinePlugin extends Plugin {
 			(leaf: WorkspaceLeaf) => new TimelineView(leaf)
 		);
 
-		this.registerMarkdownCodeBlockProcessor('time', (source, element, ctx) => {
-			this.data.reload_from_cache();
+		this.registerEditorExtension([
+			dateParserExtension
+		])
 
-			const parsed_data = this.data.parse_block_to_data(source);
+		this.registerMarkdownCodeBlockProcessor('time', (source, element, ctx) => {
+			this.data.refresh_data();
+
+			const parsed_data = DataStore.parse_block_to_data(source);
 			if (parsed_data.isOk) {
 				const {start, end, name} = parsed_data.value;
 				if (end != undefined) {
-					element.createEl('p', {'text': `${name}: ${start.format('LLL')} -> ${end.format('LLL')}`});
+					element.createEl('p', {
+						'text': `${name}: ${start.format('LLL')} -> ${end.format('LLL')}`,
+						cls: BLOCK_CSS_CLASS
+					});
 				} else {
-					element.createEl('p', {'text': `${name}: ${start.format('LLL')}`});
+					element.createEl('p', {'text': `${name}: ${start.format('LLL')}`, cls: BLOCK_CSS_CLASS});
 				}
 			} else {
 				new Notice(`Failed to parse time event data at ${ctx.sourcePath}`);
@@ -46,7 +56,7 @@ export default class TimelinePlugin extends Plugin {
 	}
 
 	async activate_view() {
-		await this.data.reload_from_cache();
+		await this.data.refresh_data();
 
 		const {workspace} = this.app;
 

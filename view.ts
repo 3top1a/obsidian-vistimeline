@@ -53,11 +53,10 @@ export class TimelineView extends ItemView {
 
 		let index = 0;
 		data.forEach((item) => {
-			console.debug(item);
 			const data = item.data.value;
 			output.add([{
 				id: index,
-				// @ts-ignore
+				// @ts-ignore Some type weirdness in the DataSet
 				content: data.name,
 				start: data.start?.toISOString(),
 				end: data.end?.toISOString(),
@@ -67,8 +66,6 @@ export class TimelineView extends ItemView {
 
 			index += 1;
 		});
-
-		console.info(output);
 
 		return output;
 	}
